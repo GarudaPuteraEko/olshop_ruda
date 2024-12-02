@@ -15,7 +15,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($result_check->num_rows > 0) {
         echo "Username already exists.";
     } else {
-        $sql = "INSERT INTO users (first_name, last_name, username, password, register_date) VALUES ('$first_name', '$last_name', '$username', '$password', '$register_date')";
+        $sql = "INSERT INTO users (first_name, last_name, username, password, role, register_date) VALUES ('$first_name', '$last_name', '$username', '$password', 'user', '$register_date')";
 
         if ($conn->query($sql) === TRUE) {
             header("Location: login.php");

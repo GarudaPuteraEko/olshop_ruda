@@ -1,29 +1,38 @@
 <?php
-include 'db.php';
 session_start();
+include 'db.php';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Ambil input dari form
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-    $sql = "SELECT id, password FROM users WHERE username='$username'";
-    $result = $conn->query($sql);
+    // Query menggunakan prepared statement untuk keamanan
+    $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
 
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        if (password_verify($password, $row['password'])) {
-            $_SESSION['user_id'] = $row['id'];
-            header("Location: index.php");
-            exit();
+    // Validasi login
+    if ($user && password_verify($password, $user['password'])) {
+        // Simpan data ke session
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['role'] = $user['role'];
+
+        // Redirect berdasarkan role
+        if ($user['role'] == 'admin') {
+            header('Location: admin_index.php');
         } else {
-            echo "Invalid password.";
+            header('Location: index.php');
         }
+        exit;
     } else {
-        echo "No user found.";
+        $error = "Username atau Password salah.";
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -39,6 +48,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
     <div class="container">
         <form method="post" action="" class="form-container">
+            <?php if (isset($error)): ?>
+                <p class="error"><?= htmlspecialchars($error) ?></p>
+            <?php endif; ?>
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" required><br>
             <label for="password">Password:</label>
